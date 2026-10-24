@@ -240,21 +240,21 @@
     const THEMES = {
       noon: {
         name: '正午陽光',
-        waterTop: '#0ed2f7',
-        waterBottom: '#006699',
-        sandLight: '#fef9e7',
-        sandDark: '#e3cf96',
-        causticAlpha: 0.18,
+        waterTop: '#63e7ed',
+        waterBottom: '#075078',
+        sandLight: '#fff3c9',
+        sandDark: '#bc9862',
+        causticAlpha: 0.22,
         causticColor: '255, 255, 255',
         godRaysAlpha: 0.12,
         ambientGlow: 'rgba(255, 255, 255, 0.1)'
       },
       sunset: {
         name: '黃昏金暈',
-        waterTop: '#ff7e5f',
-        waterBottom: '#2b5876',
-        sandLight: '#ffe5b4',
-        sandDark: '#b36d38',
+        waterTop: '#ff9b73',
+        waterBottom: '#334f75',
+        sandLight: '#ffe3ad',
+        sandDark: '#9b6248',
         causticAlpha: 0.22,
         causticColor: '255, 215, 120',
         godRaysAlpha: 0.18,
@@ -262,10 +262,10 @@
       },
       night: {
         name: '靜謐夜光',
-        waterTop: '#091c32',
-        waterBottom: '#020b14',
-        sandLight: '#18314f',
-        sandDark: '#0e1d2f',
+        waterTop: '#173f72',
+        waterBottom: '#06192d',
+        sandLight: '#283d61',
+        sandDark: '#111e39',
         causticAlpha: 0.08,
         causticColor: '0, 242, 254',
         godRaysAlpha: 0.04,
@@ -456,6 +456,99 @@
     initSeafloor();
     window.addEventListener('resize', initSeafloor);
 
+    function drawReefDepth(c, time) {
+      const horizon = height - Math.max(135, height * 0.19);
+      c.save();
+
+      // 水面映入柔霧般的彩色光柱，讓遠景亮而不刺眼。
+      c.globalCompositeOperation = 'screen';
+      const shafts = [width * .22, width * .51, width * .78];
+      shafts.forEach((x, index) => {
+        const beam = c.createLinearGradient(x, 0, x + width * .08, horizon + 100);
+        const tint = timeMode === 'sunset' ? '255,211,154' : timeMode === 'night' ? '91,190,255' : '213,255,239';
+        beam.addColorStop(0, `rgba(${tint}, ${index === 1 ? .18 : .10})`);
+        beam.addColorStop(.55, `rgba(${tint}, .035)`);
+        beam.addColorStop(1, `rgba(${tint}, 0)`);
+        c.fillStyle = beam;
+        c.beginPath();
+        c.moveTo(x - width * .035, 0);
+        c.lineTo(x + width * .035, 0);
+        c.lineTo(x + width * .15, horizon + 100);
+        c.lineTo(x - width * .10, horizon + 100);
+        c.closePath();
+        c.fill();
+      });
+      c.globalCompositeOperation = 'source-over';
+
+      // 遠處珊瑚礁以柔和色塊疊出電影場景的景深。
+      const reefGlow = c.createLinearGradient(0, horizon - 70, 0, height);
+      reefGlow.addColorStop(0, timeMode === 'night' ? 'rgba(49,117,148,.06)' : 'rgba(255,236,177,.08)');
+      reefGlow.addColorStop(1, timeMode === 'night' ? 'rgba(22,83,111,.66)' : 'rgba(22,112,126,.62)');
+      c.fillStyle = reefGlow;
+      c.beginPath();
+      c.moveTo(0, horizon + 38);
+      c.bezierCurveTo(width * .15, horizon - 45, width * .28, horizon + 54, width * .43, horizon + 18);
+      c.bezierCurveTo(width * .64, horizon - 48, width * .78, horizon + 54, width, horizon + 8);
+      c.lineTo(width, height);
+      c.lineTo(0, height);
+      c.closePath();
+      c.fill();
+
+      // 小型圓潤珊瑚群，柔化礁石輪廓並增加色彩層次。
+      const coralClusters = [
+        [width * .10, horizon + 31, 1, '#ef8d82'],
+        [width * .31, horizon + 48, .72, '#f5bd66'],
+        [width * .76, horizon + 29, .92, '#d68ac4'],
+        [width * .92, horizon + 43, .68, '#ff9c73']
+      ];
+      coralClusters.forEach(([x, y, scale, color], index) => {
+        c.save();
+        c.translate(x, y);
+        c.scale(scale, scale);
+        c.globalAlpha = timeMode === 'night' ? .5 : .82;
+        c.shadowColor = color;
+        c.shadowBlur = timeMode === 'night' ? 12 : 7;
+        c.fillStyle = color;
+        c.beginPath();
+        c.moveTo(-30, 25);
+        c.bezierCurveTo(-35, 3, -29, -6, -26, -18);
+        c.bezierCurveTo(-17, -12, -16, -2, -15, 7);
+        c.bezierCurveTo(-11, -9, -4, -23, 2, -26);
+        c.bezierCurveTo(8, -12, 2, -2, 1, 10);
+        c.bezierCurveTo(9, 0, 18, -6, 24, -3);
+        c.bezierCurveTo(23, 8, 17, 15, 16, 25);
+        c.closePath();
+        c.fill();
+        c.shadowBlur = 0;
+        c.globalAlpha = .26;
+        c.strokeStyle = '#fff4dc';
+        c.lineWidth = 2;
+        c.beginPath();
+        c.moveTo(-15, 22);
+        c.quadraticCurveTo(-17, 2, -25, -15);
+        c.moveTo(1, 22);
+        c.quadraticCurveTo(5, 0, 2, -22);
+        c.moveTo(14, 22);
+        c.quadraticCurveTo(18, 7, 23, 0);
+        c.stroke();
+        c.restore();
+      });
+
+      // 沙底的暖色反光與鏡頭邊緣柔暗效果。
+      const floorLight = c.createRadialGradient(width * .48, height - 20, 5, width * .48, height - 20, width * .6);
+      floorLight.addColorStop(0, timeMode === 'night' ? 'rgba(73,194,207,.12)' : 'rgba(255,244,202,.28)');
+      floorLight.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = floorLight;
+      c.fillRect(0, horizon, width, height - horizon);
+
+      const vignette = c.createRadialGradient(width * .5, height * .48, height * .12, width * .5, height * .5, Math.max(width, height) * .78);
+      vignette.addColorStop(.55, 'rgba(0,22,46,0)');
+      vignette.addColorStop(1, timeMode === 'night' ? 'rgba(0,4,20,.38)' : 'rgba(0,48,65,.22)');
+      c.fillStyle = vignette;
+      c.fillRect(0, 0, width, height);
+      c.restore();
+    }
+
     /* ========================================================
        5. 淺海生物族群邏輯 (Fish, Turtle, Jellyfish, Clam, Crab)
        ======================================================== */
@@ -578,87 +671,135 @@
         c.rotate(this.angle);
 
         const tailWiggle = Math.sin(this.tailAngle) * 0.35;
+        const clownfish = this.subType === 'clownfish';
+        const bodyRx = this.size;
+        const bodyRy = this.size * (clownfish ? .62 : .68);
+        const baseColor = clownfish ? '#ff7a27' : '#1386c8';
 
-        if (this.subType === 'clownfish') {
-          // 小丑魚繪製 (鮮橙色 + 白色條紋)
-          c.fillStyle = '#ff7315';
-          c.beginPath();
-          c.ellipse(0, 0, this.size, this.size * 0.55, 0, 0, Math.PI * 2);
-          c.fill();
+        // 柔和接觸陰影，讓魚看起來浮在水中而非貼在平面上。
+        c.save();
+        c.translate(0, this.size * .56);
+        c.scale(1, .3);
+        c.fillStyle = 'rgba(0, 31, 52, .24)';
+        c.beginPath();
+        c.ellipse(0, 0, this.size * 1.05, this.size * .35, 0, 0, Math.PI * 2);
+        c.fill();
+        c.restore();
 
-          // 白條紋
-          c.fillStyle = '#ffffff';
-          c.beginPath();
-          c.rect(-this.size * 0.2, -this.size * 0.5, this.size * 0.22, this.size);
-          c.fill();
+        // 扇形尾鰭帶圓角，配合身體的柔和漸層增加厚度感。
+        c.save();
+        c.translate(-this.size * .78, 0);
+        c.rotate(tailWiggle);
+        const tailGrad = c.createLinearGradient(-this.size, 0, this.size * .2, 0);
+        tailGrad.addColorStop(0, clownfish ? '#ffbf63' : '#ffe276');
+        tailGrad.addColorStop(1, baseColor);
+        c.fillStyle = tailGrad;
+        c.beginPath();
+        c.moveTo(0, 0);
+        c.bezierCurveTo(-this.size * .45, -this.size * .18, -this.size * .68, -this.size * .55, -this.size * .92, -this.size * .43);
+        c.quadraticCurveTo(-this.size * .82, 0, -this.size * .92, this.size * .43);
+        c.bezierCurveTo(-this.size * .58, this.size * .48, -this.size * .35, this.size * .15, 0, 0);
+        c.fill();
+        c.restore();
 
-          c.beginPath();
-          c.rect(this.size * 0.25, -this.size * 0.42, this.size * 0.18, this.size * 0.84);
-          c.fill();
+        // 小背鰭與胸鰭。
+        c.fillStyle = clownfish ? '#ffb245' : '#46c7e7';
+        c.beginPath();
+        c.moveTo(-this.size * .35, -bodyRy * .56);
+        c.quadraticCurveTo(-this.size * .03, -bodyRy * 1.2, this.size * .34, -bodyRy * .57);
+        c.quadraticCurveTo(0, -bodyRy * .69, -this.size * .35, -bodyRy * .56);
+        c.fill();
 
-          // 擺動尾鰭
-          c.save();
-          c.translate(-this.size * 0.85, 0);
-          c.rotate(tailWiggle);
-          c.fillStyle = '#ff7315';
-          c.beginPath();
-          c.moveTo(0, 0);
-          c.lineTo(-this.size * 0.6, -this.size * 0.45);
-          c.lineTo(-this.size * 0.45, 0);
-          c.lineTo(-this.size * 0.6, this.size * 0.45);
-          c.closePath();
-          c.fill();
-          c.restore();
+        const bodyGrad = c.createLinearGradient(-this.size * .2, -bodyRy, this.size * .2, bodyRy * 1.15);
+        bodyGrad.addColorStop(0, clownfish ? '#ffd184' : '#8cecff');
+        bodyGrad.addColorStop(.28, clownfish ? '#ff9a39' : '#38b8ed');
+        bodyGrad.addColorStop(.75, baseColor);
+        bodyGrad.addColorStop(1, clownfish ? '#d94c20' : '#124c98');
+        c.fillStyle = bodyGrad;
+        c.shadowColor = 'rgba(2, 29, 52, .45)';
+        c.shadowBlur = 9;
+        c.shadowOffsetY = 4;
+        c.beginPath();
+        c.ellipse(0, 0, bodyRx, bodyRy, 0, 0, Math.PI * 2);
+        c.fill();
+        c.shadowBlur = 0;
+        c.shadowOffsetY = 0;
 
-          // 眼睛
-          c.fillStyle = '#000';
-          c.beginPath();
-          c.arc(this.size * 0.6, -this.size * 0.18, 2.2, 0, Math.PI * 2);
-          c.fill();
+        c.save();
+        c.beginPath();
+        c.ellipse(0, 0, bodyRx, bodyRy, 0, 0, Math.PI * 2);
+        c.clip();
+        if (clownfish) {
+          // 乳白色弧形條紋沿著身體輪廓彎曲。
+          c.lineCap = 'round';
+          c.lineWidth = this.size * .19;
+          c.strokeStyle = '#fff8e8';
+          [-.28, .38].forEach((x, i) => {
+            c.beginPath();
+            c.moveTo(this.size * x, -bodyRy * .95);
+            c.quadraticCurveTo(this.size * (x - .09), 0, this.size * (x + .04), bodyRy * .95);
+            c.stroke();
+            c.lineWidth = 1.5;
+            c.strokeStyle = 'rgba(191, 102, 41, .38)';
+            c.stroke();
+            c.lineWidth = this.size * .19;
+            c.strokeStyle = '#fff8e8';
+          });
         } else {
-          // 藍倒吊繪製 (皇家藍 + 亮黃尾)
-          c.fillStyle = '#1e6091';
+          c.fillStyle = '#1d3983';
           c.beginPath();
-          c.ellipse(0, 0, this.size, this.size * 0.6, 0, 0, Math.PI * 2);
+          c.moveTo(-this.size * .48, -bodyRy * .96);
+          c.quadraticCurveTo(this.size * .44, -bodyRy * .75, this.size * .72, -bodyRy * .06);
+          c.quadraticCurveTo(this.size * .4, bodyRy * .43, -this.size * .1, bodyRy * .95);
+          c.quadraticCurveTo(this.size * .18, bodyRy * .24, -this.size * .48, -bodyRy * .96);
           c.fill();
-
-          // 黑色背部紋路
-          c.fillStyle = '#101e33';
-          c.beginPath();
-          c.ellipse(-this.size * 0.1, -this.size * 0.2, this.size * 0.6, this.size * 0.25, 0, 0, Math.PI * 2);
-          c.fill();
-
-          // 亮黃色三角尾鰭
-          c.save();
-          c.translate(-this.size * 0.8, 0);
-          c.rotate(tailWiggle);
-          c.fillStyle = '#f9c74f';
-          c.beginPath();
-          c.moveTo(0, 0);
-          c.lineTo(-this.size * 0.65, -this.size * 0.5);
-          c.lineTo(-this.size * 0.4, 0);
-          c.lineTo(-this.size * 0.65, this.size * 0.5);
-          c.closePath();
-          c.fill();
-          c.restore();
-
-          // 眼睛
-          c.fillStyle = '#f9c74f';
-          c.beginPath();
-          c.arc(this.size * 0.6, -this.size * 0.15, 3.2, 0, Math.PI * 2);
-          c.fill();
-          c.fillStyle = '#000';
-          c.beginPath();
-          c.arc(this.size * 0.62, -this.size * 0.15, 1.8, 0, Math.PI * 2);
-          c.fill();
+          c.strokeStyle = 'rgba(170,245,255,.25)';
+          c.lineWidth = 1.5;
+          for (let i = 0; i < 4; i++) {
+            c.beginPath();
+            c.moveTo(-this.size * .25 + i * 5, -bodyRy * .65);
+            c.quadraticCurveTo(-this.size * .12 + i * 4, 0, -this.size * .3 + i * 6, bodyRy * .68);
+            c.stroke();
+          }
         }
 
-        // 夜光生物自發光光斑
+        // 背部柔光與小胸鰭。
+        const sheen = c.createRadialGradient(this.size * .32, -bodyRy * .56, 1, this.size * .24, -bodyRy * .35, this.size * .9);
+        sheen.addColorStop(0, 'rgba(255,255,255,.58)');
+        sheen.addColorStop(1, 'rgba(255,255,255,0)');
+        c.fillStyle = sheen;
+        c.fillRect(-this.size, -bodyRy, this.size * 2, bodyRy * 2);
+        c.restore();
+
+        // 大而明亮的眼睛、虹膜高光和微笑嘴角，讓角色更有表情。
+        const eyeX = this.size * .56;
+        const eyeY = -bodyRy * .17;
+        c.fillStyle = '#fffdf4';
+        c.beginPath();
+        c.ellipse(eyeX, eyeY, this.size * .17, this.size * .19, -.12, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = clownfish ? '#63311d' : '#17335e';
+        c.beginPath();
+        c.arc(eyeX + 1, eyeY + 1, this.size * .105, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = '#fff';
+        c.beginPath();
+        c.arc(eyeX + 2, eyeY - 2, this.size * .045, 0, Math.PI * 2);
+        c.fill();
+        c.strokeStyle = clownfish ? '#a94c2a' : '#124b86';
+        c.lineWidth = 1.4;
+        c.beginPath();
+        c.moveTo(this.size * .88, this.size * .13);
+        c.quadraticCurveTo(this.size * .97, this.size * .19, this.size * .89, this.size * .23);
+        c.stroke();
+
         if (timeMode === 'night') {
-          c.shadowBlur = 12;
-          c.shadowColor = this.subType === 'clownfish' ? '#ff9900' : '#00b4d8';
-          c.strokeStyle = 'rgba(255,255,255,0.4)';
+          c.shadowBlur = 16;
+          c.shadowColor = clownfish ? '#ffb347' : '#62eaff';
+          c.strokeStyle = 'rgba(255,255,255,.55)';
           c.lineWidth = 1;
+          c.beginPath();
+          c.ellipse(0, 0, bodyRx, bodyRy, 0, 0, Math.PI * 2);
           c.stroke();
         }
 
@@ -717,7 +858,7 @@
         const flipperWave = Math.sin(this.flipperAngle) * 0.35;
 
         // 前雙大胸鰭 (如同翅膀般划動)
-        c.fillStyle = '#2d6a4f';
+        c.fillStyle = '#49a979';
         // 左鰭
         c.save();
         c.translate(-this.size * 0.45, -this.size * 0.15);
@@ -737,17 +878,26 @@
         c.restore();
 
         // 後雙小腿鰭
-        c.fillStyle = '#1b4332';
+        c.fillStyle = '#30734f';
         c.beginPath();
         c.ellipse(-this.size * 0.3, this.size * 0.5, this.size * 0.12, this.size * 0.25, -0.3, 0, Math.PI * 2);
         c.ellipse(this.size * 0.3, this.size * 0.5, this.size * 0.12, this.size * 0.25, 0.3, 0, Math.PI * 2);
         c.fill();
 
         // 圓滑橢圓龜殼
-        c.fillStyle = '#40916c';
+        const shellGrad = c.createRadialGradient(-this.size * .2, -this.size * .3, 2, 0, 0, this.size * .82);
+        shellGrad.addColorStop(0, '#a4e89d');
+        shellGrad.addColorStop(.48, '#55b97c');
+        shellGrad.addColorStop(1, '#236c5a');
+        c.fillStyle = shellGrad;
+        c.shadowColor = 'rgba(0, 24, 36, .34)';
+        c.shadowBlur = 12;
+        c.shadowOffsetY = 5;
         c.beginPath();
         c.ellipse(0, 0, this.size * 0.5, this.size * 0.65, 0, 0, Math.PI * 2);
         c.fill();
+        c.shadowBlur = 0;
+        c.shadowOffsetY = 0;
 
         // 龜殼盾板幾何花紋
         c.strokeStyle = '#1b4332';
@@ -758,7 +908,10 @@
         c.stroke();
 
         // 圓圓的龜頭
-        c.fillStyle = '#52b788';
+        const headGrad = c.createRadialGradient(-this.size * .08, -this.size * .82, 1, 0, -this.size * .72, this.size * .3);
+        headGrad.addColorStop(0, '#b3f3aa');
+        headGrad.addColorStop(1, '#45ae80');
+        c.fillStyle = headGrad;
         c.beginPath();
         c.ellipse(0, -this.size * 0.72, this.size * 0.22, this.size * 0.28, 0, 0, Math.PI * 2);
         c.fill();
@@ -1141,6 +1294,8 @@
       ctx.closePath();
       ctx.fill();
       ctx.restore();
+
+      drawReefDepth(ctx, timestamp);
 
       // 3. 水面焦散光影 (Water Caustics) 與陽光透射
       ctx.save();
